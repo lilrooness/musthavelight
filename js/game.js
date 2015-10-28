@@ -1,7 +1,18 @@
 (function() {
 
-	var canvas = document.getElementById('canvas');
-	var context = canvas.getContext('2d');
+	// var canvas = document.getElementById('canvas');
+	// var context = canvas.getContext('2d');
+
+	var renderer = new PIXI.WebGLRenderer(640, 480);
+
+	document.body.appendChild(renderer.view);
+
+	var stage = new PIXI.Container();
+
+	var bloom_filter = new PIXI.filters.BloomFilter();
+	bloom_filter.blur = 8;
+
+	stage.filters = [bloom_filter];
 
 	var lights = [];
 
@@ -17,8 +28,6 @@
 
 	var captureDistance = 100;
 
-	var attractDistance = 75;
-
 	var attractForceFactor = 0.02;
 
 	var repelForceFactor = 0.02;
@@ -28,11 +37,8 @@
 	var mapWidth = 1000;
 	var mapHeight = 1000;
 
-	var screenWidth = canvas.width;
-	var screenHeight = canvas.height;
-
-	var screenWidth = canvas.width;
-	var screenHeight = canvas.height;
+	var screenWidth = 640;//canvas.width;
+	var screenHeight = 480;//canvas.height;
 
 	var player = new Player(320, 240, 10);
 	var camera = new Entity(0, 0, 0);
@@ -170,7 +176,7 @@
 
 	var update_game = function() {
 
-		gametime += 0.01;
+		gametime += 0.1;
 
 		//check if the player SHOULD still be linked to the light
 		if(player.linkedTo > -1) {
@@ -178,6 +184,7 @@
 			if(linkedDist > captureDistance) {
 				player.linkedTo = -1;
 				player.fragments = 0; //you loose your fragments if you loose connection
+				player.timeOfLoss = gametime;
 			}
 		}
 
@@ -205,55 +212,101 @@
 				var repelForce = Vector2d.norm(Vector2d.vecFrom(player, lights[link]));// * repelForceFactor;
 				lights[link].apply_force(repelForce.x * repelForceFactor, 
 										repelForce.y * repelForceFactor);
-			} else /*if(dist <= attractDistance)*/ {
+			} else {
 				var attractForce = Vector2d.norm(Vector2d.vecFrom(lights[link], player));// * attractForceFactor;
 				lights[link].apply_force(attractForce.x * attractForceFactor * player.fragments, 
 										attractForce.y * attractForceFactor * player.fragments);
 			}
+			// var attractForce = Vector2d.norm(Vector2d.vecFrom(lights[link], player));// * attractForceFactor;
+			// lights[link].apply_force(attractForce.x * attractForceFactor * player.fragments, 
+			// attractForce.y * attractForceFactor * player.fragments);
 		}
 	};
 
-	var render = function() {
-		context.beginPath();
-		context.rect(0, 0, 640, 480);
-		context.fillStyle = 'black';
-		context.fill();
+	// var render = function() {
+	// 	context.beginPath();
+	// 	context.rect(0, 0, 640, 480);
+	// 	context.fillStyle = 'black';
+	// 	context.fill();
 
-		context.fillStyle = 'white';
-		context.beginPath();
-		context.arc(player.x - camera.x, player.y - camera.y, player.rad, 0, 2* Math.PI, false);
-		context.fill();
+	// 	var blueSaturation = 0;
 
-		context.fillStyle = 'yellow';
+	// 	if(player.linkedTo == -1 && blueSaturation < 100) {
+	// 		blueSaturation = Math.ceil(gametime - player.timeOfLoss);
+	// 		console.log(blueSaturation);
+	// 	}
 
-		//draw light placeholders
-		for(var i = 0; i< lights.length; i++) {
-			context.beginPath();
-			context.arc(lights[i].x - camera.x, lights[i].y - camera.y, lights[i].rad, 0, 2* Math.PI, false);
-			context.fill();
-		}
+	// 	context.fillStyle = 'rgb('+(100 + player.fragments * 5 - blueSaturation) +','+(100 + player.fragments * 5 - blueSaturation)+','+0+')';
+	// 	context.beginPath();
+	// 	context.arc(player.x - camera.x, player.y - camera.y, player.rad - blueSaturation * 0.01, 0, 2* Math.PI, false);
+	// 	context.fill();
 
-		//draw particle placeholders
-		for(var i = 0; i<particles.length; i++) {
-			context.beginPath();
-			context.arc((particles[i].x - camera.x) % screenWidth, (particles[i].y - camera.y) % screenHeight, particles[i].rad, 0, 2 * Math.PI, false);
-			context.fill();
-		}
+	// 	context.fillStyle = 'yellow';
 
-		//draw link placeholder
-		if(player.linkedTo > -1) {
-			context.lineWidth = 3;
-			context.strokeStyle = 'yellow';
-			context.beginPath();
-			context.moveTo(player.x - camera.x, player.y - camera.y);
-			context.lineTo(lights[player.linkedTo].x - camera.x, lights[player.linkedTo].y - camera.y);
-			context.stroke();
-		}
-	};
+	// 	//draw light placeholders
+	// 	for(var i = 0; i< lights.length; i++) {
+	// 		context.beginPath();
+	// 		context.arc(lights[i].x - camera.x, lights[i].y - camera.y, lights[i].rad, 0, 2* Math.PI, false);
+	// 		context.fill();
+	// 	}
+
+	// 	//draw particle placeholders
+	// 	for(var i = 0; i<particles.length; i++) {
+	// 		context.beginPath();
+	// 		context.arc((particles[i].x - camera.x) /**% screenWidth**/, 
+	// 					(particles[i].y - camera.y) /**% screenHeight**/, 
+	// 					particles[i].rad, 0, 2 * Math.PI, false);
+	// 		context.fill();
+	// 	}
+
+	// 	//draw link placeholder
+	// 	// if(player.linkedTo > -1) {
+	// 	// 	context.lineWidth = 1;
+	// 	// 	context.strokeStyle = 'yellow';
+	// 	// 	context.beginPath();
+	// 	// 	context.moveTo(player.x - camera.x, player.y - camera.y);
+	// 	// 	context.lineTo(lights[player.linkedTo].x - camera.x, lights[player.linkedTo].y - camera.y);
+	// 	// 	context.stroke();
+	// 	// }
+	// };
 
 	setInterval(function() {
 		tick();
-		render();
+		// render();
 	}, 1000 / 30);
+
+	var playerCirlceGraphics = new PIXI.Graphics();
+	var fragmentGraphics = new PIXI.Graphics();
+	var lightGraphics = new PIXI.Graphics();
+
+	stage.addChild(playerCirlceGraphics);
+
+	stage.addChild(fragmentGraphics);
+
+	stage.addChild(lightGraphics);
+
+	var animate = function() {
+
+		playerCirlceGraphics.clear();
+		playerCirlceGraphics.lineStyle(0);
+		playerCirlceGraphics.beginFill(0xFFFF00, 1);
+		playerCirlceGraphics.drawCircle(player.x - camera.x, player.y - camera.y ,player.rad );
+		playerCirlceGraphics.endFill();
+
+		fragmentGraphics.clear();
+		fragmentGraphics.lineStyle(0);
+		fragmentGraphics.beginFill(0xFFFF00, 1);
+
+		for(var i = 0; i < particles.length; i++) {
+			fragmentGraphics.drawCircle(particles[i].x - camera.x, particles[i].y - camera.y, particles[i].rad);
+		}
+
+		fragmentGraphics.endFill();
+
+		renderer.render(stage);
+		requestAnimationFrame(animate);
+	};
+
+	animate();
 
 })();
