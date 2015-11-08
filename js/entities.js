@@ -36,6 +36,7 @@ var Player = function(x, y, rad) {
 	this.linkedTo = -1;
 	this.fragments = 0;
 	this.timeOfLoss = 0;
+	this.lastCollect = 0;
 };
 
 Player.prototype = new Entity();

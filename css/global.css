@@ -1,0 +1,50 @@
+body {
+	background-color: black;
+}
+
+.container {
+	position: relative;
+	margin: 0 auto;
+	width: 640px;
+}
+
+.container canvas {
+	border: solid 1px gray;
+	top: 0px;
+	left: 0px;
+	z-index: 0;
+}
+
+.overlay {
+	position: absolute;
+	width: 640px;
+	height: 480px;
+	top: 0px;
+	left: 0px;
+	opacity: 0;
+	z-index: 1;
+	background-color: white;
+	display: none;
+}
+
+.instructions {
+	text-shadow: 0 0 1px yellow;
+	position: auto;
+	text-align: center;
+	color: transparent;
+	font-family: tahoma;
+	z-index: 2;
+}
+
+.end_message {
+	text-align: center;
+	color: black;
+	font-family: tahoma;
+	line-height: 240px;
+}
+
+.next_level {
+	text-align: center;
+	color: black;
+	font-family: tahoma;
+}

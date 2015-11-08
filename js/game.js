@@ -1,20 +1,19 @@
 (function() {
 
-	// var canvas = document.getElementById('canvas');
-	// var context = canvas.getContext('2d');
-
 	var renderer = new PIXI.WebGLRenderer(640, 480);
 
-	document.body.appendChild(renderer.view);
+	// document.body.container.appendChild(renderer.view);
+
+	document.getElementById("container").appendChild(renderer.view);
 
 	var stage = new PIXI.Container();
 
+	var hasLost = false;
 
 	var bloom_filter = new PIXI.filters.BloomFilter();
 	var blur_filter = new PIXI.filters.BlurFilter();
 	blur_filter.blur = 2;
 	bloom_filter.blur = 10;
-	// blur_filter.padding = 30;
 
 	stage.filters = [blur_filter, bloom_filter];
 
@@ -52,6 +51,24 @@
 
 	console.log(lights);
 
+	var reset_game = function() {
+
+		gametime = 1;
+
+		hasLost = false;
+
+		lights = [];
+
+		player = new Player(320, 240, 10);
+		camera = new Entity(0, 0, 0);
+
+		lights.push(new Entity(100, 100, 10));
+		lights.push(new Entity(150, 150, 10));
+
+		document.getElementById('overlay').style.display = 'none';
+
+	};
+
 	var InputHandler = function() {
 		this.pressed_keys = {
 			up: false,
@@ -86,25 +103,33 @@
 	};
 
 	var tick = function() {
-		if(inputHandler.pressed_keys['up']) {
-			player.apply_force(0, -0.4);
-			camera.apply_force(0, -0.4);
+
+		if(hasLost) {
+			document.getElementById('overlay').style.display = 'inline';
+            document.getElementById('overlay').style.opacity = 0.5;
+            document.getElementById('end_message').innerHTML = 'FAILURE (Click to restart)';
+		} else {
+			if(inputHandler.pressed_keys['up']) {
+				player.apply_force(0, -0.4);
+				camera.apply_force(0, -0.4);
+			}
+
+			if(inputHandler.pressed_keys.down) {
+				player.apply_force(0, 0.4);
+				camera.apply_force(0, 0.4);
+			}
+
+			if(inputHandler.pressed_keys.left) {
+				player.apply_force(-0.4, 0);
+				camera.apply_force(-0.4, 0);
+			}
+
+			if(inputHandler.pressed_keys.right) {
+				player.apply_force(0.4, 0);
+				camera.apply_force(0.4, 0);
+			}
 		}
 
-		if(inputHandler.pressed_keys.down) {
-			player.apply_force(0, 0.4);
-			camera.apply_force(0, 0.4);
-		}
-
-		if(inputHandler.pressed_keys.left) {
-			player.apply_force(-0.4, 0);
-			camera.apply_force(-0.4, 0);
-		}
-
-		if(inputHandler.pressed_keys.right) {
-			player.apply_force(0.4, 0);
-			camera.apply_force(0.4, 0);
-		}
 
 		//apply wind force
 		var wind_force = get_wind_force(Math.random() * 0.2 - 0.1);
@@ -174,6 +199,7 @@
 				player.fragments ++;
 				particles[i].x = Math.random() * screenWidth;
 				particles[i].y = Math.random() * screenHeight;
+				player.lastCollect = gametime;
 			}
 		}
 	}
@@ -241,11 +267,28 @@
 
 	var animate = function() {
 
+		var playerOpacity = 1;
+
+		playerOpacity = 1 - ((gametime - player.lastCollect) / 30);
+
+		if(playerOpacity <= 0) {
+			hasLost = true;
+		}
+
 		playerCirlceGraphics.clear();
 		playerCirlceGraphics.lineStyle(0);
-		playerCirlceGraphics.beginFill(0xFFFF00, 1);
+		playerCirlceGraphics.beginFill(0xFFFF00, playerOpacity);
 		playerCirlceGraphics.drawCircle(player.x - camera.x, player.y - camera.y ,player.rad );
 		playerCirlceGraphics.endFill();
+
+		if(player.linkedTo > -1) {
+ 
+			// playerCirlceGraphics.beginFill(0xFFFF00, 1);
+			playerCirlceGraphics.lineStyle(playerOpacity, 0xFFFF00);
+			playerCirlceGraphics.moveTo(player.x - camera.x, player.y - camera.y);
+			playerCirlceGraphics.lineTo(lights[player.linkedTo].x - camera.x, lights[player.linkedTo].y - camera.y);
+			playerCirlceGraphics.endFill();
+		}
 
 		fragmentGraphics.clear();
 		fragmentGraphics.lineStyle(0);
@@ -266,5 +309,15 @@
 	};
 
 	animate();
+
+	var rgbToHex = function(red, green, blue) {
+		var deColor = red + 256 * green * 65536 * blue;
+
+		return deColor.toString(16);
+	};
+
+	document.getElementById('overlay').onclick = function() {
+        reset_game();
+    };
 
 })();
